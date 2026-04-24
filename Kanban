@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Kanban с архивом</title>
+<style>
+body {
+  font-family: Arial;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: #f4f4f4;
+}
+
+.column {
+  background: #ddd;
+  padding: 10px;
+  width: 22%;
+  border-radius: 8px;
+}
+
+.tasks { min-height: 300px; }
+
+.task {
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 5px;
+  cursor: grab;
+}
+
+.selected {
+  outline: 2px solid black;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.color {
+  width: 25px;
+  height: 25px;
+  display: inline-block;
+  margin: 5px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.color.selectedColor {
+  border: 2px solid black;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Колонки -->
+<div class="column">
+  <h3>To Do</h3>
+  <div class="tasks" id="todo"></div>
+  <button onclick="openModal()">Добавить</button>
+</div>
+
+<div class="column">
+  <h3>In Progress</h3>
+  <div class="tasks" id="progress"></div>
+</div>
+
+<div class="column">
+  <h3>Done</h3>
+  <div class="tasks" id="done"></div>
+</div>
+
+<div class="column">
+  <h3>Архив</h3>
+  <div class="tasks" id="archive"></div>
+</div>
+
+<!-- Нижняя панель -->
+<div class="bottom-bar">
+  <input placeholder="Поиск..." oninput="searchTasks(this.value)">
+  <button onclick="deleteSelected()">Удалить</button>
+</div>
+
+<!-- Модалка добавления -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <input id="title" placeholder="Название">
+    <textarea id="desc" placeholder="Описание"></textarea>
+    <div id="colors"></div>
+    <button onclick="createTask()">Создать</button>
+  </div>
+</div>
+
+<script>
+let dragged = null;
+let selectedTask = null;
+let selectedColor = null;
+
+const colors = ["lightblue","lightgreen","lightcoral","khaki","plum"];
+const colorsDiv = document.getElementById("colors");
+
+// Выбор цвета
+colors.forEach(c => {
+  const el = document.createElement("div");
+  el.className = "color";
+  el.style.background = c;
+  el.onclick = () => {
+    document.querySelectorAll(".color").forEach(x => x.classList.remove("selectedColor"));
+    el.classList.add("selectedColor");
+    selectedColor = c;
+  };
+  colorsDiv.appendChild(el);
+});
+
+function openModal() {
+  modal.style.display = "flex";
+}
+
+function createTask() {
+  if(!title.value || !selectedColor) return;
+
+  const t = document.createElement("div");
+  t.className = "task";
+  t.style.background = selectedColor;
+  t.draggable = true;
+  t.innerHTML = `<b>${title.value}</b>
+${desc.value}`;
+
+  t.onclick = () => {
+    document.querySelectorAll(".task").forEach(x => x.classList.remove("selected"));
+    t.classList.add("selected");
+    selectedTask = t;
+  };
+
+  t.addEventListener("dragstart", () => dragged = t);
+
+  todo.appendChild(t);
+
+  modal.style.display = "none";
+  title.value = ""; desc.value = "";
+  selectedColor = null;
+  document.querySelectorAll(".color").forEach(x => x.classList.remove("selectedColor"));
+}
+
+// Drag & Drop для всех колонок
+document.querySelectorAll(".tasks").forEach(col => {
+  col.addEventListener("dragover", e => {
+    e.preventDefault();
+    if(dragged) col.appendChild(dragged);
+  });
+});
+
+function deleteSelected() {
+  if(selectedTask){
+    selectedTask.remove();
+    selectedTask = null;
+  }
+}
+
+function searchTasks(q){
+  document.querySelectorAll(".task").forEach(t => {
+    t.style.display = t.innerText.toLowerCase().includes(q.toLowerCase()) ? "" : "none";
+  });
+}
+</script>
+
+</body>
+</html>
+
+
+
+
